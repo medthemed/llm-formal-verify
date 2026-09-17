@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from typing import Any, Iterable, Mapping
 
+from .errors import SpecError
 from .ir import (
     Action,
     Assignment,
@@ -60,13 +61,13 @@ class SpecBuilder:
     def int_var(self, name: str, low: int, high: int, comment: str = "") -> "SpecBuilder":
         """Inclusive integer range ``low..high``."""
         if high < low:
-            raise ValueError(f"int_var {name!r}: high {high} < low {low}")
+            raise SpecError(f"int_var {name!r}: high {high} < low {low}")
         return self.var(name, range(low, high + 1), comment=comment)
 
     def enum_var(self, name: str, values: Iterable[Any], comment: str = "") -> "SpecBuilder":
         values_t = tuple(values)
         if not values_t:
-            raise ValueError(f"enum_var {name!r} needs at least one value")
+            raise SpecError(f"enum_var {name!r} needs at least one value")
         return self.var(name, values_t, comment=comment)
 
     # -- init --------------------------------------------------------------

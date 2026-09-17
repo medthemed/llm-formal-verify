@@ -15,6 +15,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Mapping, Sequence
 
+from .errors import SpecError
+
 
 # ---------------------------------------------------------------------------
 # Expressions
@@ -223,9 +225,9 @@ class StateVar:
 
     def __post_init__(self) -> None:
         if not self.name:
-            raise ValueError("StateVar.name must be non-empty")
+            raise SpecError("StateVar.name must be non-empty")
         if not self.domain:
-            raise ValueError(f"StateVar {self.name!r} needs a non-empty domain")
+            raise SpecError(f"StateVar {self.name!r} needs a non-empty domain")
         object.__setattr__(self, "domain", tuple(self.domain))
 
     def to_json(self) -> dict[str, Any]:
@@ -273,7 +275,7 @@ class Action:
 
     def __post_init__(self) -> None:
         if not self.name:
-            raise ValueError("Action.name must be non-empty")
+            raise SpecError("Action.name must be non-empty")
         object.__setattr__(self, "assignments", tuple(self.assignments))
 
     def to_json(self) -> dict[str, Any]:
@@ -314,9 +316,9 @@ class Check:
 
     def __post_init__(self) -> None:
         if self.kind not in ("safety", "liveness"):
-            raise ValueError(f"Check.kind must be 'safety' or 'liveness', got {self.kind!r}")
+            raise SpecError(f"Check.kind must be 'safety' or 'liveness', got {self.kind!r}")
         if not self.name:
-            raise ValueError("Check.name must be non-empty")
+            raise SpecError("Check.name must be non-empty")
 
     def to_json(self) -> dict[str, Any]:
         payload: dict[str, Any] = {
@@ -362,9 +364,9 @@ class Spec:
 
     def __post_init__(self) -> None:
         if not self.name:
-            raise ValueError("Spec.name must be non-empty")
+            raise SpecError("Spec.name must be non-empty")
         if not self.variables:
-            raise ValueError("Spec needs at least one state variable")
+            raise SpecError("Spec needs at least one state variable")
         object.__setattr__(self, "variables", tuple(self.variables))
         object.__setattr__(self, "actions", tuple(self.actions))
         object.__setattr__(self, "invariants", tuple(self.invariants))
@@ -392,19 +394,19 @@ class Spec:
         return states
 
     def validate(self) -> None:
-        """Raise ValueError if the IR is internally inconsistent."""
+        """Raise :class:`~llm_formal_verify.errors.SpecError` if the IR is inconsistent."""
         names = [v.name for v in self.variables]
         if len(names) != len(set(names)):
-            raise ValueError(f"Duplicate state variable names: {names}")
+            raise SpecError(f"Duplicate state variable names: {names}")
         known = set(names)
         action_names = [a.name for a in self.actions]
         if len(action_names) != len(set(action_names)):
-            raise ValueError(f"Duplicate action names: {action_names}")
+            raise SpecError(f"Duplicate action names: {action_names}")
 
         def check_expr(expr: Expr, context: str) -> None:
             unknown = expr.free_vars() - known
             if unknown:
-                raise ValueError(
+                raise SpecError(
                     f"{context} references unknown variables: {sorted(unknown)}"
                 )
 
@@ -417,7 +419,7 @@ class Spec:
             check_expr(action.guard, f"Action {action.name!r} guard")
             for assignment in action.assignments:
                 if assignment.target not in known:
-                    raise ValueError(
+                    raise SpecError(
                         f"Action {action.name!r} assigns unknown variable "
                         f"{assignment.target!r}"
                     )
@@ -465,7 +467,7 @@ def eval_expr(expr: Expr, state: Mapping[str, Any]) -> Any:
     if isinstance(expr, Unary):
         if expr.op == "not":
             return not bool(eval_expr(expr.operand, state))
-        raise ValueError(f"Unknown unary op: {expr.op!r}")
+        raise SpecError(f"Unknown unary op: {expr.op!r}")
     if isinstance(expr, BinOp):
         left = eval_expr(expr.left, state)
         right = eval_expr(expr.right, state)
@@ -492,7 +494,7 @@ def eval_expr(expr: Expr, state: Mapping[str, Any]) -> Any:
             return left + right
         if op == "sub":
             return left - right
-        raise ValueError(f"Unknown binary op: {op!r}")
+        raise SpecError(f"Unknown binary op: {op!r}")
     raise TypeError(f"Not an expression: {expr!r}")
 
 

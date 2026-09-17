@@ -18,6 +18,7 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Mapping, Sequence
 
+from .errors import ModelError
 from .ir import Action, Check, Spec, apply_action, eval_expr
 
 
@@ -173,7 +174,7 @@ def bounded_model_check(spec: Spec, bound: int = 8) -> BMCResult:
         Maximum transition depth. Depth 0 means "check initial states only".
     """
     if bound < 0:
-        raise ValueError("bound must be >= 0")
+        raise ModelError("bound must be >= 0")
 
     vmap = spec.var_map()
     initial_states = [s for s in spec.domain_product() if eval_expr(spec.init, s)]
@@ -205,7 +206,7 @@ def bounded_model_check(spec: Spec, bound: int = 8) -> BMCResult:
             # Sanity: successor must stay inside declared domains.
             for name, value in successor.items():
                 if value not in vmap[name].domain:
-                    raise ValueError(
+                    raise ModelError(
                         f"Action {action.name!r} produced out-of-domain value "
                         f"{value!r} for {name!r} (domain={list(vmap[name].domain)})"
                     )
