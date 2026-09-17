@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-02
+
+### Added
+- Batch checking: `lfv check` accepts multiple spec paths and directories of
+  `*.json`. Directories expand to their immediate children (sorted).
+- Aggregate pass/fail table for multi-spec runs (`SPEC / STATUS / FAILURES / STATES`
+  plus a summary line).
+- New public exports: `check_many`, `expand_spec_paths`, `BatchCheckResult`,
+  `SpecOutcome`.
+- `lfv check --format text|json` ( `--json` remains an alias for `--format json` ).
+
+### Changed
+- Single-file `lfv check` output is unchanged (verbose report or per-spec JSON).
+- Multi-spec exit codes: `0` all pass, `1` any check failed, `2` nothing usable
+  was checked (empty expansion / total load failure).
+
 ## [0.3.0] - 2026-10-16
 
 ### Added

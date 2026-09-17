@@ -96,4 +96,4 @@ __all__ = [
     "eval_expr",
 ]
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
