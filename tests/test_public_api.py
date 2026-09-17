@@ -51,10 +51,17 @@ EXPECTED_ALL = {
     "emit_tla",
     "expand_spec_paths",
     "load_config",
+    "load_schema",
     "resolve_check_options",
+    "schema_path",
     "write_starter",
     "apply_action",
     "eval_expr",
+    "BATCH_REPORT",
+    "BMC_REPORT",
+    "KNOWN_SCHEMAS",
+    "SPEC",
+    "TLA_MODULE",
 }
 
 

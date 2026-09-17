@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medthemed.github.io/llm-formal-verify/schemas/bmc-report.schema.json",
+  "title": "lfv BMC report",
+  "description": "Machine-readable bounded model check report for a single spec (lfv check --format json).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "spec",
+    "bound",
+    "search",
+    "ok",
+    "reachable_states",
+    "transitions_explored",
+    "checks",
+    "failures"
+  ],
+  "properties": {
+    "spec": {
+      "type": "string",
+      "description": "Spec name from the IR."
+    },
+    "bound": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "search": {
+      "type": "string",
+      "enum": ["bfs", "dfs"]
+    },
+    "ok": {
+      "type": "boolean",
+      "description": "True when every check is ok or unreachable."
+    },
+    "reachable_states": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "transitions_explored": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "checks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/checkResult" }
+    },
+    "failures": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Names of checks with status=failed."
+    }
+  },
+  "$defs": {
+    "state": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Variable name -> value mapping."
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "action", "state"],
+      "properties": {
+        "index": { "type": "integer", "minimum": 0 },
+        "action": { "type": "string" },
+        "state": { "$ref": "#/$defs/state" }
+      }
+    },
+    "counterexample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["check", "kind", "reason", "length", "steps"],
+      "properties": {
+        "check": { "type": "string" },
+        "kind": { "type": "string", "enum": ["safety", "liveness"] },
+        "reason": { "type": "string" },
+        "length": { "type": "integer", "minimum": 0 },
+        "steps": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/step" }
+        }
+      }
+    },
+    "checkResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "kind", "status", "states_examined"],
+      "properties": {
+        "name": { "type": "string" },
+        "kind": { "type": "string", "enum": ["safety", "liveness"] },
+        "status": { "type": "string", "enum": ["ok", "failed", "unreachable"] },
+        "states_examined": { "type": "integer", "minimum": 0 },
+        "counterexample": { "$ref": "#/$defs/counterexample" },
+        "witness": { "$ref": "#/$defs/state" }
+      }
+    }
+  }
+}

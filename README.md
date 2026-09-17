@@ -65,9 +65,13 @@ lfv check examples/unsafe_transfer.json --bound 6 --json
 lfv check examples/safe_transfer.json examples/unsafe_transfer.json --bound 6
 lfv check my-specs/ --bound 6 --json
 
-# Export TLA+-like text
+# Export TLA+-like text (optionally as JSON)
 lfv tla examples/safe_transfer.json
+lfv tla examples/safe_transfer.json --format json
 ```
+
+Machine-readable payloads are pinned by published JSON Schemas — see
+[docs/JSON_SCHEMA.md](docs/JSON_SCHEMA.md).
 
 ### Project config
 
