@@ -62,7 +62,8 @@ lfv tla examples/safe_transfer.json
 ```
 
 See [docs/COUNTEREXAMPLE.md](docs/COUNTEREXAMPLE.md) for a full walkthrough
-of reading and fixing a counterexample.
+of reading and fixing a counterexample, and [docs/PUBLIC_API.md](docs/PUBLIC_API.md)
+for the 0.x compatibility promise and typed exceptions.
 
 ### Python-embedded builder
 
