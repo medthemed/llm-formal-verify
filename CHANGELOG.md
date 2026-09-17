@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-16
+
+### Added
+- Published Draft 2020-12 JSON Schemas shipped with the package:
+  `bmc-report`, `batch-report`, `tla-module`, and `spec`.
+- Public exports: `load_schema`, `schema_path`, `KNOWN_SCHEMAS`,
+  `BMC_REPORT`, `BATCH_REPORT`, `TLA_MODULE`, `SPEC`.
+- `lfv tla --format json` / `--json` emits `{"module": "..."}`.
+- `docs/JSON_SCHEMA.md`: interop contract, stability rules, exit codes.
+
+### Changed
+- `lfv check --json` is now documented as an alias of `--format json` and
+  pinned to `bmc-report` / `batch-report` schemas in tests.
+
 ## [0.4.0] - 2026-11-02
 
 ### Added
