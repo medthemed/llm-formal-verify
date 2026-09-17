@@ -21,9 +21,13 @@ modules.
 | Symbol | Notes |
 | --- | --- |
 | `bounded_model_check(spec, bound=8)` | Returns `BMCResult`. |
+| `check_many(paths, *, bound=8, search="bfs")` | Returns `BatchCheckResult` over many specs. |
+| `expand_spec_paths(paths)` | Directories → sorted `*.json` children. |
 | `SpecBuilder` fluent methods | `var`, `bool_var`, `int_var`, `enum_var`, `init`, `init_eq`, `action`, `invariant`, `safety`, `liveness`, `build`. |
 | `BMCResult` fields | `spec_name`, `bound`, `reachable_states`, `transitions_explored`, `results`. |
 | `BMCResult` helpers | `ok`, `failures`, `format()`, `to_dict()`, `to_json()`. |
+| `BatchCheckResult` helpers | `ok`, `passed`, `failed`, `errors`, `format_table()`, `to_dict()`, `to_json()`. |
+| `SpecOutcome` | Per-file `path` / `result` / `error` with `status` (`pass`/`fail`/`error`). |
 
 ## Typed exceptions
 
