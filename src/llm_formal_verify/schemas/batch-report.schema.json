@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medthemed.github.io/llm-formal-verify/schemas/batch-report.schema.json",
+  "title": "lfv batch report",
+  "description": "Aggregate of checking many specs (lfv check SPEC... --format json).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "bound",
+    "search",
+    "ok",
+    "count",
+    "passed",
+    "failed",
+    "errors",
+    "results"
+  ],
+  "properties": {
+    "bound": { "type": "integer", "minimum": 0 },
+    "search": { "type": "string", "enum": ["bfs", "dfs"] },
+    "ok": {
+      "type": "boolean",
+      "description": "True only when every outcome is a passing check."
+    },
+    "count": { "type": "integer", "minimum": 0 },
+    "passed": { "type": "integer", "minimum": 0 },
+    "failed": { "type": "integer", "minimum": 0 },
+    "errors": { "type": "integer", "minimum": 0 },
+    "results": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/specOutcome" }
+    }
+  },
+  "$defs": {
+    "specOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "status"],
+      "properties": {
+        "path": { "type": "string" },
+        "status": { "type": "string", "enum": ["pass", "fail", "error"] },
+        "error": { "type": "string" },
+        "result": {
+          "$ref": "bmc-report.schema.json"
+        }
+      }
+    }
+  }
+}

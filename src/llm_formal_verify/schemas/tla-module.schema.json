@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://medthemed.github.io/llm-formal-verify/schemas/tla-module.schema.json",
+  "title": "lfv TLA module export",
+  "description": "Machine-readable wrapper for lfv tla --format json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["module"],
+  "properties": {
+    "module": {
+      "type": "string",
+      "description": "TLA+-like module text emitted for the spec."
+    }
+  }
+}

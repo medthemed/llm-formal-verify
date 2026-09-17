@@ -49,6 +49,15 @@ from .batch import (
 from .bmc import BMCResult, CheckResult, Counterexample, Step, bounded_model_check
 from .config import ProjectConfig, discover_config, load_config, resolve_check_options
 from .init import write_starter
+from .schemas import (
+    BATCH_REPORT,
+    BMC_REPORT,
+    KNOWN_SCHEMAS,
+    SPEC,
+    TLA_MODULE,
+    load_schema,
+    schema_path,
+)
 from .tla_emit import emit_tla
 from .ir import apply_action, eval_expr
 
@@ -84,13 +93,20 @@ __all__ = [
     "implies",
     "add",
     "sub",
+    "BATCH_REPORT",
+    "BMC_REPORT",
+    "KNOWN_SCHEMAS",
+    "SPEC",
+    "TLA_MODULE",
     "bounded_model_check",
     "check_many",
     "discover_config",
     "emit_tla",
     "expand_spec_paths",
     "load_config",
+    "load_schema",
     "resolve_check_options",
+    "schema_path",
     "write_starter",
     "apply_action",
     "eval_expr",

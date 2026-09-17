@@ -2,16 +2,18 @@
 
 Subcommands
 -----------
-lfv check SPEC.json [SPEC.json ...] [--bound N] [--search bfs|dfs] [--json]
+lfv check SPEC.json [SPEC.json ...] [--bound N] [--search bfs|dfs] [--json|--format json]
     Run the bounded model checker on one or more specs. Directories expand
     to their ``*.json`` children. A single file prints the verbose report;
     multiple paths print an aggregate pass/fail table. Exit 0 = all pass,
     1 = any check failed, 2 = load / model error.
     Defaults (bound, search) come from a project config file when present;
     explicit flags always win.
+    JSON payloads match schemas ``bmc-report`` / ``batch-report``.
 
-lfv tla SPEC.json
-    Print a TLA+-like module for the spec.
+lfv tla SPEC.json [--format text|json]
+    Print a TLA+-like module for the spec. ``--format json`` wraps the text
+    as ``{"module": "..."}`` (schema: ``tla-module``).
 
 lfv init [DIR] [--force]
     Scaffold a starter ``spec.json`` and ``.lfv.json`` project config.
@@ -103,7 +105,11 @@ def cmd_tla(args: argparse.Namespace) -> int:
         print(f"error: failed to load spec: {exc}", file=sys.stderr)
         return 2
 
-    print(emit_tla(spec), end="")
+    text = emit_tla(spec)
+    if _wants_json(args):
+        print(json.dumps({"module": text}, indent=2) + "\n", end="")
+    else:
+        print(text, end="")
     return 0
 
 
@@ -175,6 +181,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_tla = sub.add_parser("tla", help="print a TLA+-like module for the spec")
     p_tla.add_argument("spec", help="path to a JSON spec file")
+    p_tla.add_argument(
+        "--json",
+        action="store_true",
+        help="emit {\"module\": \"...\"} JSON (schema: tla-module)",
+    )
+    p_tla.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="output format (default: text; --json is an alias for --format json)",
+    )
     p_tla.set_defaults(func=cmd_tla)
 
     p_init = sub.add_parser(
