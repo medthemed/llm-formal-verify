@@ -25,6 +25,17 @@ If a property passes `lfv check --bound N`, it has been verified for every
 behavior reachable within `N` steps on the declared finite domains. That is
 useful and honest — it is not a mathematical proof for all time.
 
+## Architecture
+
+```mermaid
+flowchart LR
+    A[LLM Logic Spec] --> B[IR Builder]
+    B --> C[Bounded Model Checker]
+    B --> D[TLA+ Emitter]
+    C --> E[Proven under bound / Counterexample]
+    D --> F[TLA+ text]
+```
+
 ## Install
 
 ```bash
