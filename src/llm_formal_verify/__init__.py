@@ -32,7 +32,7 @@ from .ir import (
     sub,
 )
 from .builder import SpecBuilder
-from .bmc import BMCResult, Counterexample, bounded_model_check
+from .bmc import BMCResult, CheckResult, Counterexample, Step, bounded_model_check
 from .tla_emit import emit_tla
 from .ir import apply_action, eval_expr
 
@@ -40,7 +40,9 @@ __all__ = [
     "Action",
     "BMCResult",
     "Check",
+    "CheckResult",
     "Counterexample",
+    "Step",
     "Expr",
     "Spec",
     "SpecBuilder",

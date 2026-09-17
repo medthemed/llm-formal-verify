@@ -2,8 +2,9 @@
 
 Subcommands
 -----------
-lfv check SPEC.json [--bound N]
+lfv check SPEC.json [--bound N] [--json]
     Run the bounded model checker. Exit code 0 = all checks pass, 1 = failure.
+    With --json, print a structured report suitable for CI tooling.
 
 lfv tla SPEC.json
     Print a TLA+-like module for the spec.
@@ -41,7 +42,10 @@ def cmd_check(args: argparse.Namespace) -> int:
         print(f"error: model checking failed: {exc}", file=sys.stderr)
         return 2
 
-    print(result.format())
+    if args.json:
+        print(result.to_json(), end="")
+    else:
+        print(result.format())
     return 0 if result.ok else 1
 
 
@@ -73,6 +77,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=8,
         help="maximum transition depth to explore (default: 8)",
+    )
+    p_check.add_argument(
+        "--json",
+        action="store_true",
+        help="print a machine-readable JSON report instead of text",
     )
     p_check.set_defaults(func=cmd_check)
 
