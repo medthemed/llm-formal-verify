@@ -54,9 +54,15 @@ lfv check examples/safe_transfer.json --bound 6
 # Run the bundled buggy example (should FAIL with a counterexample)
 lfv check examples/unsafe_transfer.json --bound 6
 
+# Same failure, machine-readable (CI / dashboards)
+lfv check examples/unsafe_transfer.json --bound 6 --json
+
 # Export TLA+-like text
 lfv tla examples/safe_transfer.json
 ```
+
+See [docs/COUNTEREXAMPLE.md](docs/COUNTEREXAMPLE.md) for a full walkthrough
+of reading and fixing a counterexample.
 
 ### Python-embedded builder
 
@@ -127,8 +133,8 @@ python examples/generate_specs.py
 ## CLI
 
 ```
-lfv check SPEC.json [--bound N]   # bounded model check; exit 0 pass, 1 fail, 2 error
-lfv tla SPEC.json                 # print TLA+-like module
+lfv check SPEC.json [--bound N] [--json]  # bounded model check; exit 0 pass, 1 fail, 2 error
+lfv tla SPEC.json                         # print TLA+-like module
 ```
 
 ## How the checker works
