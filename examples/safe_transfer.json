@@ -1,0 +1,342 @@
+{
+  "name": "SafeTransfer",
+  "description": "Two accounts with a 1-unit transfer. Invariant: balances stay non-negative and total is conserved.",
+  "variables": [
+    {
+      "name": "balance_a",
+      "domain": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "comment": "account A balance"
+    },
+    {
+      "name": "balance_b",
+      "domain": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "comment": "account B balance"
+    },
+    {
+      "name": "locked",
+      "domain": [
+        false,
+        true
+      ],
+      "comment": "admin lock"
+    }
+  ],
+  "init": {
+    "kind": "binop",
+    "op": "and",
+    "left": {
+      "kind": "binop",
+      "op": "and",
+      "left": {
+        "kind": "binop",
+        "op": "eq",
+        "left": {
+          "kind": "var",
+          "name": "balance_a"
+        },
+        "right": {
+          "kind": "lit",
+          "value": 2
+        }
+      },
+      "right": {
+        "kind": "binop",
+        "op": "eq",
+        "left": {
+          "kind": "var",
+          "name": "balance_b"
+        },
+        "right": {
+          "kind": "lit",
+          "value": 2
+        }
+      }
+    },
+    "right": {
+      "kind": "binop",
+      "op": "eq",
+      "left": {
+        "kind": "var",
+        "name": "locked"
+      },
+      "right": {
+        "kind": "lit",
+        "value": false
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "Lock",
+      "guard": {
+        "kind": "unary",
+        "op": "not",
+        "operand": {
+          "kind": "var",
+          "name": "locked"
+        }
+      },
+      "assignments": [
+        {
+          "target": "locked",
+          "expr": {
+            "kind": "lit",
+            "value": true
+          }
+        }
+      ],
+      "comment": "admin locks transfers"
+    },
+    {
+      "name": "Unlock",
+      "guard": {
+        "kind": "var",
+        "name": "locked"
+      },
+      "assignments": [
+        {
+          "target": "locked",
+          "expr": {
+            "kind": "lit",
+            "value": false
+          }
+        }
+      ],
+      "comment": "admin unlocks transfers"
+    },
+    {
+      "name": "TransferAtoB",
+      "guard": {
+        "kind": "binop",
+        "op": "and",
+        "left": {
+          "kind": "binop",
+          "op": "and",
+          "left": {
+            "kind": "binop",
+            "op": "gt",
+            "left": {
+              "kind": "var",
+              "name": "balance_a"
+            },
+            "right": {
+              "kind": "lit",
+              "value": 0
+            }
+          },
+          "right": {
+            "kind": "binop",
+            "op": "lt",
+            "left": {
+              "kind": "var",
+              "name": "balance_b"
+            },
+            "right": {
+              "kind": "lit",
+              "value": 4
+            }
+          }
+        },
+        "right": {
+          "kind": "unary",
+          "op": "not",
+          "operand": {
+            "kind": "var",
+            "name": "locked"
+          }
+        }
+      },
+      "assignments": [
+        {
+          "target": "balance_a",
+          "expr": {
+            "kind": "binop",
+            "op": "sub",
+            "left": {
+              "kind": "var",
+              "name": "balance_a"
+            },
+            "right": {
+              "kind": "lit",
+              "value": 1
+            }
+          }
+        },
+        {
+          "target": "balance_b",
+          "expr": {
+            "kind": "binop",
+            "op": "add",
+            "left": {
+              "kind": "var",
+              "name": "balance_b"
+            },
+            "right": {
+              "kind": "lit",
+              "value": 1
+            }
+          }
+        }
+      ],
+      "comment": "move 1 unit from A to B"
+    },
+    {
+      "name": "TransferBtoA",
+      "guard": {
+        "kind": "binop",
+        "op": "and",
+        "left": {
+          "kind": "binop",
+          "op": "and",
+          "left": {
+            "kind": "binop",
+            "op": "gt",
+            "left": {
+              "kind": "var",
+              "name": "balance_b"
+            },
+            "right": {
+              "kind": "lit",
+              "value": 0
+            }
+          },
+          "right": {
+            "kind": "binop",
+            "op": "lt",
+            "left": {
+              "kind": "var",
+              "name": "balance_a"
+            },
+            "right": {
+              "kind": "lit",
+              "value": 4
+            }
+          }
+        },
+        "right": {
+          "kind": "unary",
+          "op": "not",
+          "operand": {
+            "kind": "var",
+            "name": "locked"
+          }
+        }
+      },
+      "assignments": [
+        {
+          "target": "balance_b",
+          "expr": {
+            "kind": "binop",
+            "op": "sub",
+            "left": {
+              "kind": "var",
+              "name": "balance_b"
+            },
+            "right": {
+              "kind": "lit",
+              "value": 1
+            }
+          }
+        },
+        {
+          "target": "balance_a",
+          "expr": {
+            "kind": "binop",
+            "op": "add",
+            "left": {
+              "kind": "var",
+              "name": "balance_a"
+            },
+            "right": {
+              "kind": "lit",
+              "value": 1
+            }
+          }
+        }
+      ],
+      "comment": "move 1 unit from B to A"
+    }
+  ],
+  "invariants": [
+    {
+      "name": "non_negative_a",
+      "kind": "safety",
+      "expr": {
+        "kind": "binop",
+        "op": "ge",
+        "left": {
+          "kind": "var",
+          "name": "balance_a"
+        },
+        "right": {
+          "kind": "lit",
+          "value": 0
+        }
+      }
+    },
+    {
+      "name": "non_negative_b",
+      "kind": "safety",
+      "expr": {
+        "kind": "binop",
+        "op": "ge",
+        "left": {
+          "kind": "var",
+          "name": "balance_b"
+        },
+        "right": {
+          "kind": "lit",
+          "value": 0
+        }
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "total_conserved",
+      "kind": "safety",
+      "expr": {
+        "kind": "binop",
+        "op": "eq",
+        "left": {
+          "kind": "binop",
+          "op": "add",
+          "left": {
+            "kind": "var",
+            "name": "balance_a"
+          },
+          "right": {
+            "kind": "var",
+            "name": "balance_b"
+          }
+        },
+        "right": {
+          "kind": "lit",
+          "value": 4
+        }
+      },
+      "comment": "A + B always equals 4"
+    },
+    {
+      "name": "can_lock",
+      "kind": "liveness",
+      "expr": {
+        "kind": "var",
+        "name": "locked"
+      },
+      "comment": "system can be locked"
+    }
+  ]
+}

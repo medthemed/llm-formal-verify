@@ -1,0 +1,205 @@
+{
+  "name": "UnsafeTransfer",
+  "description": "Buggy transfer: A decreases but B is not credited, so total money is not conserved. BMC should find a counterexample.",
+  "variables": [
+    {
+      "name": "balance_a",
+      "domain": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "name": "balance_b",
+      "domain": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "name": "locked",
+      "domain": [
+        false,
+        true
+      ]
+    }
+  ],
+  "init": {
+    "kind": "binop",
+    "op": "and",
+    "left": {
+      "kind": "binop",
+      "op": "and",
+      "left": {
+        "kind": "binop",
+        "op": "eq",
+        "left": {
+          "kind": "var",
+          "name": "balance_a"
+        },
+        "right": {
+          "kind": "lit",
+          "value": 2
+        }
+      },
+      "right": {
+        "kind": "binop",
+        "op": "eq",
+        "left": {
+          "kind": "var",
+          "name": "balance_b"
+        },
+        "right": {
+          "kind": "lit",
+          "value": 2
+        }
+      }
+    },
+    "right": {
+      "kind": "binop",
+      "op": "eq",
+      "left": {
+        "kind": "var",
+        "name": "locked"
+      },
+      "right": {
+        "kind": "lit",
+        "value": false
+      }
+    }
+  },
+  "actions": [
+    {
+      "name": "Lock",
+      "guard": {
+        "kind": "unary",
+        "op": "not",
+        "operand": {
+          "kind": "var",
+          "name": "locked"
+        }
+      },
+      "assignments": [
+        {
+          "target": "locked",
+          "expr": {
+            "kind": "lit",
+            "value": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "Unlock",
+      "guard": {
+        "kind": "var",
+        "name": "locked"
+      },
+      "assignments": [
+        {
+          "target": "locked",
+          "expr": {
+            "kind": "lit",
+            "value": false
+          }
+        }
+      ]
+    },
+    {
+      "name": "BuggyTransfer",
+      "guard": {
+        "kind": "binop",
+        "op": "and",
+        "left": {
+          "kind": "binop",
+          "op": "gt",
+          "left": {
+            "kind": "var",
+            "name": "balance_a"
+          },
+          "right": {
+            "kind": "lit",
+            "value": 0
+          }
+        },
+        "right": {
+          "kind": "unary",
+          "op": "not",
+          "operand": {
+            "kind": "var",
+            "name": "locked"
+          }
+        }
+      },
+      "assignments": [
+        {
+          "target": "balance_a",
+          "expr": {
+            "kind": "binop",
+            "op": "sub",
+            "left": {
+              "kind": "var",
+              "name": "balance_a"
+            },
+            "right": {
+              "kind": "lit",
+              "value": 1
+            }
+          }
+        }
+      ],
+      "comment": "A decreases, B unchanged \u2014 money disappears"
+    }
+  ],
+  "invariants": [
+    {
+      "name": "non_negative_a",
+      "kind": "safety",
+      "expr": {
+        "kind": "binop",
+        "op": "ge",
+        "left": {
+          "kind": "var",
+          "name": "balance_a"
+        },
+        "right": {
+          "kind": "lit",
+          "value": 0
+        }
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "total_conserved",
+      "kind": "safety",
+      "expr": {
+        "kind": "binop",
+        "op": "eq",
+        "left": {
+          "kind": "binop",
+          "op": "add",
+          "left": {
+            "kind": "var",
+            "name": "balance_a"
+          },
+          "right": {
+            "kind": "var",
+            "name": "balance_b"
+          }
+        },
+        "right": {
+          "kind": "lit",
+          "value": 4
+        }
+      },
+      "comment": "SHOULD FAIL: total drifts below 4"
+    }
+  ]
+}
