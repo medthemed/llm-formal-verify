@@ -31,6 +31,9 @@ class Step:
     def __repr__(self) -> str:  # pragma: no cover - cosmetic
         return f"--[{self.action}]-->{self.state}"
 
+    def to_dict(self) -> dict[str, Any]:
+        return {"action": self.action, "state": dict(self.state)}
+
 
 @dataclass
 class Counterexample:
@@ -53,6 +56,17 @@ class Counterexample:
         for i, step in enumerate(self.steps):
             lines.append(f"    [{i}] --{step.action}--> {step.state}")
         return "\n".join(lines)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "check": self.check_name,
+            "kind": self.kind,
+            "reason": self.reason,
+            "length": self.trace_length(),
+            "steps": [
+                {"index": i, **step.to_dict()} for i, step in enumerate(self.steps)
+            ],
+        }
 
 
 @dataclass
@@ -78,6 +92,19 @@ class CheckResult:
         if self.status == "unreachable":
             return head + "\n  property never became true within the bound"
         return head
+
+    def to_dict(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "name": self.name,
+            "kind": self.kind,
+            "status": self.status,
+            "states_examined": self.states_examined,
+        }
+        if self.counterexample is not None:
+            payload["counterexample"] = self.counterexample.to_dict()
+        if self.witness is not None:
+            payload["witness"] = dict(self.witness)
+        return payload
 
 
 @dataclass
@@ -108,6 +135,22 @@ class BMCResult:
             lines.append(r.format())
             lines.append("")
         return "\n".join(lines).rstrip() + "\n"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "spec": self.spec_name,
+            "bound": self.bound,
+            "ok": self.ok,
+            "reachable_states": self.reachable_states,
+            "transitions_explored": self.transitions_explored,
+            "checks": [r.to_dict() for r in self.results],
+            "failures": [r.name for r in self.failures],
+        }
+
+    def to_json(self, *, indent: int = 2) -> str:
+        import json
+
+        return json.dumps(self.to_dict(), indent=indent, sort_keys=False) + "\n"
 
 
 def _freeze(state: Mapping[str, Any]) -> tuple:

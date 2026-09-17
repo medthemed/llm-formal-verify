@@ -58,6 +58,37 @@ def test_cli_missing_file(capsys):
     assert "error" in err.lower()
 
 
+def test_cli_check_json_safe_spec(capsys):
+    code = main(["check", str(SAFE), "--bound", "6", "--json"])
+    out = capsys.readouterr().out
+    assert code == 0
+    payload = json.loads(out)
+    assert payload["ok"] is True
+    assert payload["spec"] == "SafeTransfer"
+    assert payload["bound"] == 6
+    assert payload["failures"] == []
+    assert isinstance(payload["checks"], list)
+    assert all("status" in c for c in payload["checks"])
+
+
+def test_cli_check_json_unsafe_spec_includes_counterexample(capsys):
+    code = main(["check", str(UNSAFE), "--bound", "6", "--json"])
+    out = capsys.readouterr().out
+    assert code == 1
+    payload = json.loads(out)
+    assert payload["ok"] is False
+    assert payload["failures"], "expected at least one failing check"
+    failed = [c for c in payload["checks"] if c["status"] == "failed"]
+    assert failed
+    ce = failed[0]["counterexample"]
+    assert ce["kind"] == "safety"
+    assert ce["steps"], "counterexample must include a path"
+    assert ce["steps"][0]["action"] == "Init"
+    assert "state" in ce["steps"][0]
+    assert "balance_a" in ce["steps"][0]["state"]
+    assert ce["length"] == len(ce["steps"])
+
+
 def test_examples_are_valid_json():
     for path in (SAFE, UNSAFE):
         data = json.loads(path.read_text(encoding="utf-8"))
