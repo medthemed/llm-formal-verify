@@ -61,6 +61,10 @@ lfv check examples/unsafe_transfer.json --bound 6
 # Same failure, machine-readable (CI / dashboards)
 lfv check examples/unsafe_transfer.json --bound 6 --json
 
+# Batch: check several specs (or a directory) and print an aggregate table
+lfv check examples/safe_transfer.json examples/unsafe_transfer.json --bound 6
+lfv check my-specs/ --bound 6 --json
+
 # Export TLA+-like text
 lfv tla examples/safe_transfer.json
 ```
@@ -155,8 +159,9 @@ python examples/generate_specs.py
 
 ```
 lfv init [DIR] [--force]                          # scaffold spec.json + .lfv.json
-lfv check SPEC.json [--bound N] [--search bfs|dfs] [--json]
+lfv check SPEC.json [SPEC.json ...] [--bound N] [--search bfs|dfs] [--json|--format json]
                                                   # bounded model check; exit 0 pass, 1 fail, 2 error
+                                                  # multiple paths / directories print a pass/fail table
 lfv tla SPEC.json                                 # print TLA+-like module
 ```
 

@@ -40,6 +40,12 @@ from .ir import (
     sub,
 )
 from .builder import SpecBuilder
+from .batch import (
+    BatchCheckResult,
+    SpecOutcome,
+    check_many,
+    expand_spec_paths,
+)
 from .bmc import BMCResult, CheckResult, Counterexample, Step, bounded_model_check
 from .config import ProjectConfig, discover_config, load_config, resolve_check_options
 from .init import write_starter
@@ -49,6 +55,7 @@ from .ir import apply_action, eval_expr
 __all__ = [
     "Action",
     "BMCResult",
+    "BatchCheckResult",
     "Check",
     "CheckResult",
     "Counterexample",
@@ -58,6 +65,7 @@ __all__ = [
     "Spec",
     "SpecBuilder",
     "SpecError",
+    "SpecOutcome",
     "StateVar",
     "Step",
     "TRUE",
@@ -77,8 +85,10 @@ __all__ = [
     "add",
     "sub",
     "bounded_model_check",
+    "check_many",
     "discover_config",
     "emit_tla",
+    "expand_spec_paths",
     "load_config",
     "resolve_check_options",
     "write_starter",

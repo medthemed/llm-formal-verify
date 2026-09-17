@@ -2,8 +2,11 @@
 
 Subcommands
 -----------
-lfv check SPEC.json [--bound N] [--search bfs|dfs] [--json]
-    Run the bounded model checker. Exit code 0 = all checks pass, 1 = failure.
+lfv check SPEC.json [SPEC.json ...] [--bound N] [--search bfs|dfs] [--json]
+    Run the bounded model checker on one or more specs. Directories expand
+    to their ``*.json`` children. A single file prints the verbose report;
+    multiple paths print an aggregate pass/fail table. Exit 0 = all pass,
+    1 = any check failed, 2 = load / model error.
     Defaults (bound, search) come from a project config file when present;
     explicit flags always win.
 
@@ -22,6 +25,7 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
+from .batch import check_many, expand_spec_paths
 from .bmc import bounded_model_check
 from .config import VALID_SEARCH_STRATEGIES, resolve_check_options
 from .errors import ModelError, SpecError
@@ -36,30 +40,60 @@ def _load_spec(path: str | Path) -> Spec:
     return Spec.from_json(data)
 
 
-def cmd_check(args: argparse.Namespace) -> int:
-    try:
-        spec = _load_spec(args.spec)
-    except (OSError, json.JSONDecodeError, KeyError, SpecError, TypeError) as exc:
-        print(f"error: failed to load spec: {exc}", file=sys.stderr)
-        return 2
+def _wants_json(args: argparse.Namespace) -> bool:
+    fmt = getattr(args, "format", None)
+    if fmt == "json":
+        return True
+    return bool(getattr(args, "json", False))
 
+
+def cmd_check(args: argparse.Namespace) -> int:
     try:
         bound, search = resolve_check_options(bound=args.bound, search=args.search)
     except SpecError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
-    try:
-        result = bounded_model_check(spec, bound=bound, search=search)
-    except (ModelError, SpecError) as exc:
-        print(f"error: model checking failed: {exc}", file=sys.stderr)
+    specs: list[str] = list(args.specs)
+    expanded = expand_spec_paths(specs)
+    multi = len(expanded) != 1 or len(specs) > 1 or any(
+        Path(p).is_dir() for p in specs
+    )
+
+    if not multi:
+        # Single file: keep the historical verbose / per-spec JSON report.
+        try:
+            spec = _load_spec(expanded[0])
+        except (OSError, json.JSONDecodeError, KeyError, SpecError, TypeError) as exc:
+            print(f"error: failed to load spec: {exc}", file=sys.stderr)
+            return 2
+
+        try:
+            result = bounded_model_check(spec, bound=bound, search=search)
+        except (ModelError, SpecError) as exc:
+            print(f"error: model checking failed: {exc}", file=sys.stderr)
+            return 2
+
+        if _wants_json(args):
+            print(result.to_json(), end="")
+        else:
+            print(result.format())
+        return 0 if result.ok else 1
+
+    if not expanded:
+        print("error: no spec files found", file=sys.stderr)
         return 2
 
-    if args.json:
-        print(result.to_json(), end="")
+    batch = check_many(expanded, bound=bound, search=search, expand=False)
+    if _wants_json(args):
+        print(batch.to_json(), end="")
     else:
-        print(result.format())
-    return 0 if result.ok else 1
+        print(batch.format_table(), end="")
+    if batch.errors and not batch.outcomes:
+        return 2
+    if batch.errors and not batch.failed and not batch.passed:
+        return 2
+    return 0 if batch.ok else 1
 
 
 def cmd_tla(args: argparse.Namespace) -> int:
@@ -99,8 +133,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p_check = sub.add_parser("check", help="run the bounded model checker")
-    p_check.add_argument("spec", help="path to a JSON spec file")
+    p_check = sub.add_parser(
+        "check",
+        help="run the bounded model checker on one or more specs",
+    )
+    p_check.add_argument(
+        "specs",
+        nargs="+",
+        help="path(s) to JSON spec file(s); directories expand to *.json",
+    )
     p_check.add_argument(
         "--bound",
         type=int,
@@ -123,6 +164,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--json",
         action="store_true",
         help="print a machine-readable JSON report instead of text",
+    )
+    p_check.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="output format (default: text; --json is an alias for --format json)",
     )
     p_check.set_defaults(func=cmd_check)
 

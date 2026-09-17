@@ -16,6 +16,7 @@ import llm_formal_verify as lfv
 EXPECTED_ALL = {
     "Action",
     "BMCResult",
+    "BatchCheckResult",
     "Check",
     "CheckResult",
     "Counterexample",
@@ -25,6 +26,7 @@ EXPECTED_ALL = {
     "Spec",
     "SpecBuilder",
     "SpecError",
+    "SpecOutcome",
     "StateVar",
     "Step",
     "TRUE",
@@ -44,8 +46,10 @@ EXPECTED_ALL = {
     "add",
     "sub",
     "bounded_model_check",
+    "check_many",
     "discover_config",
     "emit_tla",
+    "expand_spec_paths",
     "load_config",
     "resolve_check_options",
     "write_starter",
@@ -112,6 +116,22 @@ def test_bmc_result_shape_frozen():
 
     for attr in ("ok", "failures", "format", "to_dict", "to_json"):
         assert hasattr(lfv.BMCResult, attr), attr
+
+
+def test_batch_helpers_present():
+    for name in ("check_many", "expand_spec_paths", "BatchCheckResult", "SpecOutcome"):
+        assert hasattr(lfv, name), name
+    for attr in ("ok", "passed", "failed", "errors", "format_table", "to_dict", "to_json"):
+        assert hasattr(lfv.BatchCheckResult, attr), attr
+
+
+def test_check_many_signature_frozen():
+    sig = inspect.signature(lfv.check_many)
+    params = list(sig.parameters)
+    assert params == ["paths", "bound", "search", "expand"], params
+    assert sig.parameters["bound"].default == 8
+    assert sig.parameters["search"].default == "bfs"
+    assert sig.parameters["expand"].default is True
 
 
 def test_version_string_is_semver():
