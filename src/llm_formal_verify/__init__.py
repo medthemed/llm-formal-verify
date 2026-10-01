@@ -6,8 +6,16 @@ as TLA+-like text for human review, and run a bounded model checker that
 exhaustively explores small finite state spaces and reports counterexamples.
 
 It is NOT a full proof assistant. Unbounded liveness is out of scope.
+
+Public API
+----------
+Everything re-exported here (see ``__all__``) is covered by the 0.x
+compatibility promise: names may be added, but existing names and their
+call signatures stay stable within the 0.x series. Prefer this package
+namespace over importing from private modules.
 """
 
+from .errors import SpecError, ModelError
 from .ir import (
     Action,
     Check,
@@ -42,11 +50,13 @@ __all__ = [
     "Check",
     "CheckResult",
     "Counterexample",
-    "Step",
     "Expr",
+    "ModelError",
     "Spec",
     "SpecBuilder",
+    "SpecError",
     "StateVar",
+    "Step",
     "TRUE",
     "FALSE",
     "lit",

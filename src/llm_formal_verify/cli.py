@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Sequence
 
 from .bmc import bounded_model_check
+from .errors import ModelError, SpecError
 from .ir import Spec
 from .tla_emit import emit_tla
 
@@ -32,13 +33,13 @@ def _load_spec(path: str | Path) -> Spec:
 def cmd_check(args: argparse.Namespace) -> int:
     try:
         spec = _load_spec(args.spec)
-    except (OSError, json.JSONDecodeError, KeyError, ValueError, TypeError) as exc:
+    except (OSError, json.JSONDecodeError, KeyError, SpecError, TypeError) as exc:
         print(f"error: failed to load spec: {exc}", file=sys.stderr)
         return 2
 
     try:
         result = bounded_model_check(spec, bound=args.bound)
-    except ValueError as exc:
+    except (ModelError, SpecError) as exc:
         print(f"error: model checking failed: {exc}", file=sys.stderr)
         return 2
 
@@ -52,7 +53,7 @@ def cmd_check(args: argparse.Namespace) -> int:
 def cmd_tla(args: argparse.Namespace) -> int:
     try:
         spec = _load_spec(args.spec)
-    except (OSError, json.JSONDecodeError, KeyError, ValueError, TypeError) as exc:
+    except (OSError, json.JSONDecodeError, KeyError, SpecError, TypeError) as exc:
         print(f"error: failed to load spec: {exc}", file=sys.stderr)
         return 2
 
