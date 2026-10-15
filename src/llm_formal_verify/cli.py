@@ -2,12 +2,16 @@
 
 Subcommands
 -----------
-lfv check SPEC.json [--bound N] [--json]
+lfv check SPEC.json [--bound N] [--search bfs|dfs] [--json]
     Run the bounded model checker. Exit code 0 = all checks pass, 1 = failure.
-    With --json, print a structured report suitable for CI tooling.
+    Defaults (bound, search) come from a project config file when present;
+    explicit flags always win.
 
 lfv tla SPEC.json
     Print a TLA+-like module for the spec.
+
+lfv init [DIR] [--force]
+    Scaffold a starter ``spec.json`` and ``.lfv.json`` project config.
 """
 
 from __future__ import annotations
@@ -19,7 +23,9 @@ from pathlib import Path
 from typing import Sequence
 
 from .bmc import bounded_model_check
+from .config import VALID_SEARCH_STRATEGIES, resolve_check_options
 from .errors import ModelError, SpecError
+from .init import write_starter
 from .ir import Spec
 from .tla_emit import emit_tla
 
@@ -38,7 +44,13 @@ def cmd_check(args: argparse.Namespace) -> int:
         return 2
 
     try:
-        result = bounded_model_check(spec, bound=args.bound)
+        bound, search = resolve_check_options(bound=args.bound, search=args.search)
+    except SpecError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    try:
+        result = bounded_model_check(spec, bound=bound, search=search)
     except (ModelError, SpecError) as exc:
         print(f"error: model checking failed: {exc}", file=sys.stderr)
         return 2
@@ -61,6 +73,22 @@ def cmd_tla(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_init(args: argparse.Namespace) -> int:
+    directory = args.directory or "."
+    try:
+        written = write_starter(directory, force=args.force)
+    except FileExistsError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    except OSError as exc:
+        print(f"error: cannot write starter files: {exc}", file=sys.stderr)
+        return 2
+    for path in written:
+        print(f"wrote {path}")
+    print("Next: lfv check spec.json")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="lfv",
@@ -76,8 +104,20 @@ def build_parser() -> argparse.ArgumentParser:
     p_check.add_argument(
         "--bound",
         type=int,
-        default=8,
-        help="maximum transition depth to explore (default: 8)",
+        default=None,
+        help=(
+            "maximum transition depth to explore "
+            "(default: project config, else 8)"
+        ),
+    )
+    p_check.add_argument(
+        "--search",
+        choices=sorted(VALID_SEARCH_STRATEGIES),
+        default=None,
+        help=(
+            "exploration order: bfs (shortest counterexample) or dfs "
+            "(default: project config, else bfs)"
+        ),
     )
     p_check.add_argument(
         "--json",
@@ -89,6 +129,23 @@ def build_parser() -> argparse.ArgumentParser:
     p_tla = sub.add_parser("tla", help="print a TLA+-like module for the spec")
     p_tla.add_argument("spec", help="path to a JSON spec file")
     p_tla.set_defaults(func=cmd_tla)
+
+    p_init = sub.add_parser(
+        "init",
+        help="scaffold a starter spec.json and .lfv.json project config",
+    )
+    p_init.add_argument(
+        "directory",
+        nargs="?",
+        default=".",
+        help="target directory (default: current directory)",
+    )
+    p_init.add_argument(
+        "--force",
+        action="store_true",
+        help="overwrite existing starter files",
+    )
+    p_init.set_defaults(func=cmd_init)
 
     return parser
 

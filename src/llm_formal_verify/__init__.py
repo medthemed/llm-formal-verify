@@ -41,6 +41,8 @@ from .ir import (
 )
 from .builder import SpecBuilder
 from .bmc import BMCResult, CheckResult, Counterexample, Step, bounded_model_check
+from .config import ProjectConfig, discover_config, load_config, resolve_check_options
+from .init import write_starter
 from .tla_emit import emit_tla
 from .ir import apply_action, eval_expr
 
@@ -52,6 +54,7 @@ __all__ = [
     "Counterexample",
     "Expr",
     "ModelError",
+    "ProjectConfig",
     "Spec",
     "SpecBuilder",
     "SpecError",
@@ -74,7 +77,11 @@ __all__ = [
     "add",
     "sub",
     "bounded_model_check",
+    "discover_config",
     "emit_tla",
+    "load_config",
+    "resolve_check_options",
+    "write_starter",
     "apply_action",
     "eval_expr",
 ]
