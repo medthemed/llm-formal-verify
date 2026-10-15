@@ -21,6 +21,8 @@ from typing import Any, Iterable, Mapping, Sequence
 from .errors import ModelError
 from .ir import Action, Check, Spec, apply_action, eval_expr
 
+VALID_SEARCH = ("bfs", "dfs")
+
 
 @dataclass(frozen=True)
 class Step:
@@ -115,6 +117,7 @@ class BMCResult:
     reachable_states: int
     transitions_explored: int
     results: list[CheckResult]
+    search: str = "bfs"
 
     @property
     def ok(self) -> bool:
@@ -126,7 +129,7 @@ class BMCResult:
 
     def format(self) -> str:
         lines = [
-            f"BMC result for {self.spec_name!r} (bound={self.bound})",
+            f"BMC result for {self.spec_name!r} (bound={self.bound}, search={self.search})",
             f"  reachable states (within bound): {self.reachable_states}",
             f"  transitions explored: {self.transitions_explored}",
             f"  overall: {'PASS' if self.ok else 'FAIL'}",
@@ -141,6 +144,7 @@ class BMCResult:
         return {
             "spec": self.spec_name,
             "bound": self.bound,
+            "search": self.search,
             "ok": self.ok,
             "reachable_states": self.reachable_states,
             "transitions_explored": self.transitions_explored,
@@ -163,7 +167,12 @@ def _all_checks(spec: Spec) -> list[Check]:
     return list(spec.invariants) + list(spec.checks)
 
 
-def bounded_model_check(spec: Spec, bound: int = 8) -> BMCResult:
+def bounded_model_check(
+    spec: Spec,
+    bound: int = 8,
+    *,
+    search: str = "bfs",
+) -> BMCResult:
     """Explore states reachable within ``bound`` transition steps.
 
     Parameters
@@ -172,29 +181,45 @@ def bounded_model_check(spec: Spec, bound: int = 8) -> BMCResult:
         The specification to check.
     bound:
         Maximum transition depth. Depth 0 means "check initial states only".
+    search:
+        Exploration order. ``"bfs"`` (default) breadth-first — finds the
+        shortest counterexample. ``"dfs"`` depth-first — can reach deep
+        states faster on some models but traces may be longer.
     """
     if bound < 0:
         raise ModelError("bound must be >= 0")
+    if search not in VALID_SEARCH:
+        raise ModelError(
+            f"search must be one of {list(VALID_SEARCH)}, got {search!r}"
+        )
 
     vmap = spec.var_map()
     initial_states = [s for s in spec.domain_product() if eval_expr(spec.init, s)]
 
-    # BFS over depth-bounded reachable set.
     # visited maps frozen-state -> (state, depth, parent_frozen, action_name)
     visited: dict[tuple, tuple[dict[str, Any], int, tuple | None, str | None]] = {}
-    queue: deque[tuple] = deque()
+    # frontier: BFS uses a deque (popleft), DFS uses a list stack (pop).
+    if search == "bfs":
+        frontier: deque[tuple] | list[tuple] = deque()
+    else:
+        frontier = []
     transitions_explored = 0
 
     for state in initial_states:
         key = _freeze(state)
         if key not in visited:
             visited[key] = (state, 0, None, None)
-            queue.append(key)
+            frontier.append(key)
 
     reachable_at_depth: dict[int, list[tuple]] = {0: list(visited.keys())}
 
-    while queue:
-        key = queue.popleft()
+    def _pop() -> tuple:
+        if search == "bfs":
+            return frontier.popleft()  # type: ignore[union-attr]
+        return frontier.pop()  # type: ignore[union-attr]
+
+    while frontier:
+        key = _pop()
         state, depth, _, _ = visited[key]
         if depth >= bound:
             continue
@@ -213,7 +238,7 @@ def bounded_model_check(spec: Spec, bound: int = 8) -> BMCResult:
             succ_key = _freeze(successor)
             if succ_key not in visited:
                 visited[succ_key] = (successor, depth + 1, key, action.name)
-                queue.append(succ_key)
+                frontier.append(succ_key)
                 reachable_at_depth.setdefault(depth + 1, []).append(succ_key)
 
     # Build parent map for traces.
@@ -290,4 +315,5 @@ def bounded_model_check(spec: Spec, bound: int = 8) -> BMCResult:
         reachable_states=len(visited),
         transitions_explored=transitions_explored,
         results=results,
+        search=search,
     )
