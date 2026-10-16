@@ -21,6 +21,7 @@ EXPECTED_ALL = {
     "Counterexample",
     "Expr",
     "ModelError",
+    "ProjectConfig",
     "Spec",
     "SpecBuilder",
     "SpecError",
@@ -43,7 +44,11 @@ EXPECTED_ALL = {
     "add",
     "sub",
     "bounded_model_check",
+    "discover_config",
     "emit_tla",
+    "load_config",
+    "resolve_check_options",
+    "write_starter",
     "apply_action",
     "eval_expr",
 }
@@ -67,8 +72,10 @@ def test_no_stray_dunder_or_private_in_all():
 def test_bounded_model_check_signature_frozen():
     sig = inspect.signature(lfv.bounded_model_check)
     params = list(sig.parameters)
-    assert params == ["spec", "bound"], f"BMC signature changed: {params}"
+    assert params == ["spec", "bound", "search"], f"BMC signature changed: {params}"
     assert sig.parameters["bound"].default == 8
+    assert sig.parameters["search"].default == "bfs"
+    assert sig.parameters["search"].kind is inspect.Parameter.KEYWORD_ONLY
 
 
 def test_spec_builder_fluent_methods_frozen():
@@ -92,7 +99,14 @@ def test_spec_builder_fluent_methods_frozen():
 
 def test_bmc_result_shape_frozen():
     """BMCResult attributes consumed by CI tooling must stay put."""
-    required = {"spec_name", "bound", "reachable_states", "transitions_explored", "results"}
+    required = {
+        "spec_name",
+        "bound",
+        "reachable_states",
+        "transitions_explored",
+        "results",
+        "search",
+    }
     for attr in required:
         assert attr in lfv.BMCResult.__dataclass_fields__, attr
 

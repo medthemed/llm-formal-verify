@@ -48,6 +48,10 @@ use `pytest`.
 ## Quick start
 
 ```bash
+# Scaffold a new project (writes spec.json and .lfv.json)
+lfv init my-specs && cd my-specs
+lfv check spec.json
+
 # Run the bundled safe example (should PASS)
 lfv check examples/safe_transfer.json --bound 6
 
@@ -60,6 +64,22 @@ lfv check examples/unsafe_transfer.json --bound 6 --json
 # Export TLA+-like text
 lfv tla examples/safe_transfer.json
 ```
+
+### Project config
+
+Drop a `.lfv.json` (or `lfv.config.json`) next to your specs to set defaults
+so CI and local runs agree without repeating flags:
+
+```json
+{
+  "bound": 10,
+  "search": "dfs"
+}
+```
+
+Lookup order: explicit CLI flag > `.lfv.json` > `lfv.config.json` > built-in
+defaults (`bound=8`, `search=bfs`). `search` is `bfs` (shortest
+counterexample) or `dfs` (depth-first).
 
 See [docs/COUNTEREXAMPLE.md](docs/COUNTEREXAMPLE.md) for a full walkthrough
 of reading and fixing a counterexample, and [docs/PUBLIC_API.md](docs/PUBLIC_API.md)
@@ -134,15 +154,19 @@ python examples/generate_specs.py
 ## CLI
 
 ```
-lfv check SPEC.json [--bound N] [--json]  # bounded model check; exit 0 pass, 1 fail, 2 error
-lfv tla SPEC.json                         # print TLA+-like module
+lfv init [DIR] [--force]                          # scaffold spec.json + .lfv.json
+lfv check SPEC.json [--bound N] [--search bfs|dfs] [--json]
+                                                  # bounded model check; exit 0 pass, 1 fail, 2 error
+lfv tla SPEC.json                                 # print TLA+-like module
 ```
 
 ## How the checker works
 
 1. Enumerate the Cartesian product of all variable domains.
 2. Keep states satisfying `Init`.
-3. BFS outward up to `--bound` steps, applying every enabled action.
+3. Explore outward up to the bound, applying every enabled action.
+   `search=bfs` (default) finds the shortest counterexample;
+   `search=dfs` can reach deep states faster on some models.
 4. Evaluate every invariant and safety check on every visited state.
 5. Evaluate each bounded-liveness check for *reachability* within the bound.
 6. On the first safety violation, reconstruct a parent-pointer trace and
