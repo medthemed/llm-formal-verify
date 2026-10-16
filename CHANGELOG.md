@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-16
+
+### Added
+- Project config: `.lfv.json` / `lfv.config.json` sets default `bound` and `search`.
+  Lookup order: CLI flag > `.lfv.json` > `lfv.config.json` > built-in defaults.
+- `search` strategy on `bounded_model_check` (`bfs` shortest trace, `dfs` depth-first).
+  `BMCResult` now reports which strategy was used.
+- `lfv init [DIR]` scaffolds a starter `spec.json` and `.lfv.json` so the first
+  `lfv check` works immediately.
+- New public exports: `ProjectConfig`, `load_config`, `discover_config`,
+  `resolve_check_options`, `write_starter`.
+
+### Changed
+- `lfv check --bound` default is now resolved from project config (still 8 when absent).
+- `bounded_model_check` gained a keyword-only `search` parameter (default `"bfs"`).
+
 ## [0.2.0] - 2026-10-02
 
 ### Added
