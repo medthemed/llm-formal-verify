@@ -89,6 +89,38 @@ def test_cli_check_json_unsafe_spec_includes_counterexample(capsys):
     assert ce["length"] == len(ce["steps"])
 
 
+def test_cli_non_utf8_spec_is_clean_error(tmp_path, capsys):
+    """Regression: a non-UTF-8 spec file used to crash the CLI with an
+    uncaught UnicodeDecodeError traceback instead of exit code 2."""
+    bad = tmp_path / "bad_encoding.json"
+    bad.write_bytes(b"\xff\xfe{}")
+    code = main(["check", str(bad)])
+    assert code == 2
+    assert "error" in capsys.readouterr().err.lower()
+
+
+def test_cli_unknown_expression_kind_is_clean_error(tmp_path, capsys):
+    """Regression: the IR raises a plain ValueError for an unknown
+    expression kind; the CLI used to let it escape as a traceback."""
+    bad = tmp_path / "bad_expr.json"
+    bad.write_text(
+        json.dumps(
+            {
+                "name": "Bad",
+                "variables": [{"name": "x", "domain": [0, 1]}],
+                "init": {"kind": "mystery", "value": True},
+                "actions": [],
+                "invariants": [],
+                "checks": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    code = main(["check", str(bad)])
+    assert code == 2
+    assert "error" in capsys.readouterr().err.lower()
+
+
 def test_examples_are_valid_json():
     for path in (SAFE, UNSAFE):
         data = json.loads(path.read_text(encoding="utf-8"))

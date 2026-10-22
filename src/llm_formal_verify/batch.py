@@ -7,9 +7,10 @@ aggregate pass/fail table instead of one process per file.
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Mapping, Sequence, TextIO
 
 from .bmc import BMCResult, bounded_model_check
 from .errors import ModelError, SpecError
@@ -43,6 +44,32 @@ def load_spec_file(path: str | Path) -> Spec:
     raw = Path(path).read_text(encoding="utf-8")
     data = json.loads(raw)
     return Spec.from_json(data)
+
+
+def load_spec_text(text: str, *, source: str = "<stdin>") -> Spec:
+    """Build a spec from a JSON string (e.g. text read from stdin).
+
+    Raises :class:`SpecError` for empty input, invalid JSON, or a JSON
+    document that is not an object, so callers get the package's typed
+    error instead of a bare ``json`` / ``TypeError`` failure.
+    """
+    if not text or not text.strip():
+        raise SpecError(f"{source}: empty spec — expected a JSON document")
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise SpecError(f"{source}: not valid JSON: {exc}") from exc
+    if not isinstance(data, Mapping):
+        raise SpecError(
+            f"{source}: spec must be a JSON object, got {type(data).__name__}"
+        )
+    return Spec.from_json(data)
+
+
+def load_spec_from_stdin(stream: TextIO | None = None) -> Spec:
+    """Read one JSON spec from ``stream`` (default: ``sys.stdin``)."""
+    text = (stream if stream is not None else sys.stdin).read()
+    return load_spec_text(text, source="<stdin>")
 
 
 @dataclass
@@ -147,6 +174,18 @@ class BatchCheckResult:
 
     def to_json(self, *, indent: int = 2) -> str:
         return json.dumps(self.to_dict(), indent=indent, sort_keys=False) + "\n"
+
+
+def batch_exit_code(batch: BatchCheckResult) -> int:
+    """CLI exit code for a batch result.
+
+    ``0`` all pass, ``1`` any check failed (or a mix of pass/fail and
+    load errors), ``2`` nothing usable was checked (every outcome is a
+    load/model error).
+    """
+    if batch.errors and not batch.passed and not batch.failed:
+        return 2
+    return 0 if batch.ok else 1
 
 
 _LOAD_ERRORS = (

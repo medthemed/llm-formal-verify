@@ -61,6 +61,13 @@ lfv check examples/unsafe_transfer.json --bound 6
 # Same failure, machine-readable (CI / dashboards)
 lfv check examples/unsafe_transfer.json --bound 6 --json
 
+# Stream a spec in on stdin (same report and exit codes as the file form)
+cat examples/safe_transfer.json | lfv check - --bound 6
+
+# Watch mode: check now, then re-check whenever a spec file changes
+lfv watch examples/safe_transfer.json --bound 6
+lfv watch my-specs/ --once        # single pass, CI-friendly
+
 # Batch: check several specs (or a directory) and print an aggregate table
 lfv check examples/safe_transfer.json examples/unsafe_transfer.json --bound 6
 lfv check my-specs/ --bound 6 --json
@@ -166,8 +173,16 @@ lfv init [DIR] [--force]                          # scaffold spec.json + .lfv.js
 lfv check SPEC.json [SPEC.json ...] [--bound N] [--search bfs|dfs] [--json|--format json]
                                                   # bounded model check; exit 0 pass, 1 fail, 2 error
                                                   # multiple paths / directories print a pass/fail table
+                                                  # SPEC may be - to read one spec from stdin
+lfv watch SPEC.json [SPEC.json ...] [--bound N] [--search bfs|dfs] [--interval S] [--once]
+                                                  # check, then re-check on file change (mtime/size poll)
+                                                  # --once runs a single pass; Ctrl-C exits cleanly
 lfv tla SPEC.json                                 # print TLA+-like module
 ```
+
+Python API for the same: `load_spec_text(text)`, `load_spec_from_stdin()`,
+and `watch_specs(paths, bound=…, search=…, interval=…, once=…)` (returns the
+most recent run's exit code).
 
 ## How the checker works
 

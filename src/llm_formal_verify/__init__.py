@@ -45,7 +45,10 @@ from .batch import (
     SpecOutcome,
     check_many,
     expand_spec_paths,
+    load_spec_from_stdin,
+    load_spec_text,
 )
+from .watch import watch_specs
 from .bmc import BMCResult, CheckResult, Counterexample, Step, bounded_model_check
 from .config import ProjectConfig, discover_config, load_config, resolve_check_options
 from .init import write_starter
@@ -105,11 +108,14 @@ __all__ = [
     "expand_spec_paths",
     "load_config",
     "load_schema",
+    "load_spec_from_stdin",
+    "load_spec_text",
     "resolve_check_options",
     "schema_path",
+    "watch_specs",
     "write_starter",
     "apply_action",
     "eval_expr",
 ]
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"

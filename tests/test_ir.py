@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from llm_formal_verify.errors import SpecError
 from llm_formal_verify.ir import (
     Action,
     Assignment,
@@ -152,3 +153,13 @@ def test_check_rejects_bad_kind():
 def test_state_var_requires_domain():
     with pytest.raises(ValueError):
         StateVar("empty", ())
+
+
+def test_state_var_rejects_unhashable_domain_values():
+    """Regression: a list/dict domain value used to slip past validation
+    (despite the documented hashable requirement) and crash the checker
+    later with an uncaught ``TypeError: unhashable type``."""
+    with pytest.raises(SpecError, match="not hashable"):
+        StateVar("bad", ([1, 2], 0))
+    with pytest.raises(SpecError, match="not hashable"):
+        StateVar.from_json({"name": "bad", "domain": [[1, 2], 0]})

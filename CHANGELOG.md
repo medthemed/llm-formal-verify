@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-30
+
+### Added
+- Stream specs from stdin: `lfv check -` reads a single JSON spec from
+  stdin and produces the same report and exit codes as the file-path form
+  (`-` cannot be combined with other spec paths).
+- Watch mode: `lfv watch SPEC...` checks the specs, then polls their
+  files (mtime + size) and re-runs the check whenever a file changes.
+  `--once` runs a single CI-friendly pass; Ctrl-C exits cleanly with the
+  most recent run's exit code. `--interval` sets the poll interval
+  (default 2.0 seconds).
+- Public exports: `load_spec_text`, `load_spec_from_stdin`, `watch_specs`.
+
+### Fixed
+- Specs that fail to load no longer crash the CLI with a traceback:
+  non-UTF-8 files, invalid JSON, and specs the IR rejects with a plain
+  `ValueError` (e.g. an unknown expression kind) now print a clean
+  `error: ...` and exit with code 2, matching batch-mode behavior.
+- `StateVar` now enforces its documented hashable-domain requirement at
+  load time: a spec with an unhashable domain value (e.g. a JSON array
+  inside `domain`) raises `SpecError` immediately instead of crashing
+  the checker later with `TypeError: unhashable type`.
+
 ## [0.5.0] - 2026-11-16
 
 ### Added
