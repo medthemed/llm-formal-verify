@@ -52,8 +52,11 @@ EXPECTED_ALL = {
     "expand_spec_paths",
     "load_config",
     "load_schema",
+    "load_spec_from_stdin",
+    "load_spec_text",
     "resolve_check_options",
     "schema_path",
+    "watch_specs",
     "write_starter",
     "apply_action",
     "eval_expr",
@@ -139,6 +142,18 @@ def test_check_many_signature_frozen():
     assert sig.parameters["bound"].default == 8
     assert sig.parameters["search"].default == "bfs"
     assert sig.parameters["expand"].default is True
+
+
+def test_stdin_and_watch_signatures():
+    sig = inspect.signature(lfv.load_spec_text)
+    assert list(sig.parameters) == ["text", "source"]
+    sig = inspect.signature(lfv.load_spec_from_stdin)
+    assert list(sig.parameters) == ["stream"]
+    sig = inspect.signature(lfv.watch_specs)
+    params = list(sig.parameters)
+    assert params == ["paths", "bound", "search", "interval", "once", "emit", "sleep"], params
+    assert sig.parameters["interval"].default == 2.0
+    assert sig.parameters["once"].default is False
 
 
 def test_version_string_is_semver():

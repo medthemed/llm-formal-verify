@@ -228,6 +228,14 @@ class StateVar:
             raise SpecError("StateVar.name must be non-empty")
         if not self.domain:
             raise SpecError(f"StateVar {self.name!r} needs a non-empty domain")
+        for value in self.domain:
+            try:
+                hash(value)
+            except TypeError as exc:
+                raise SpecError(
+                    f"StateVar {self.name!r} domain value {value!r} is not "
+                    "hashable; domain values must be ints, bools, or strings"
+                ) from exc
         object.__setattr__(self, "domain", tuple(self.domain))
 
     def to_json(self) -> dict[str, Any]:
